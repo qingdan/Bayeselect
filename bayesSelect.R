@@ -337,6 +337,7 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
           steptrack <- 1
           while( steptrack <= maxstep  ){
             r2 <- c()
+            difflen <- c()
             
             if( length(varname) > 1 ){
               hiera_stop = 0
@@ -443,7 +444,12 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
                 
                 ######get sign#######
                 allCI <- jag.sum[[2]]
-                signdiff <- apply(sign( allCI[betastr[-i], c(1,5)] ), 1, diff )
+                
+                if( length(betastr[-i]) > 1 )
+                  signdiff <- apply( sign( allCI[betastr[-i], c(1,5)] ), 1, diff )
+                else
+                  signdiff <- diff(sign( allCI[betastr[-i], c(1,5)] ))
+                
                 temp.diff<- length( which(signdiff != 0) )
                 
                 difflen <- rbind(difflen, temp.diff)
@@ -473,7 +479,7 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               
               ######get sign#######
               allCI <- jag.sum[[2]]
-              signdiff <- apply(sign( allCI[betastr, c(1,5)] ), 1, diff )
+              signdiff <- sign( allCI[betastr, c(1,5)] )
               temp.diff<- length( which(signdiff != 0) )
               
               final.diff <- temp.diff
@@ -602,9 +608,11 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
                 rownames(dic)[i] <- temp.name
                 
                 jag.sum <- summary( jags.res )
-                allCI <- jag.sum[[2]]
-                print(betastr[-i])
-                signdiff <- apply(sign( allCI[betastr[-i], c(1,5)] ), 1, diff )
+                if( length(betastr[-i]) > 1 )
+                  signdiff <- apply( sign( allCI[betastr[-i], c(1,5)] ), 1, diff )
+                else
+                  signdiff <- diff(sign( allCI[betastr[-i], c(1,5)] ))
+                
                 temp.diff<- length( which(signdiff != 0) )
                 
                 difflen <- rbind(difflen, temp.diff)
@@ -629,7 +637,7 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               
               jag.sum <- summary( jags.res )
               allCI <- jag.sum[[2]]
-              signdiff <- apply(sign( allCI[betastr, c(1,5)] ), 1, diff )
+              signdiff <- sign( allCI[betastr, c(1,5)] )
               temp.diff<- length( which(signdiff != 0) )
               
               finaldiff <- temp.diff
@@ -711,7 +719,6 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               
               ### sign
               allCI <- jag.sum[[2]]
-              print(c(fittedbeta, betastr[currentID]))
               
               if( length(c(fittedbeta, betastr[currentID])) > 1 )
                 signdiff <- apply( sign( allCI[ c(fittedbeta, betastr[currentID]), c(1,5)] ), 1, diff )
@@ -719,7 +726,6 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
                 signdiff <- diff(sign( allCI[ c(fittedbeta, betastr[currentID]), c(1,5)] ))
               
               temp.diff<- length( which(signdiff != 0) )
-              
               difflen <- rbind(difflen, temp.diff)
               
               
@@ -779,10 +785,8 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               r2 <- rbind(r2, temp.r2)
               rownames(r2)[i] <- temp.name
               
-              
               ### sign
               allCI <- jag.sum[[2]]
-              print(betastr[i])
               signdiff <- apply(sign( allCI[c(fittedbeta, betastr[i]), c(1,5)] ), 1, diff )
               temp.diff<- length( which(signdiff != 0) )
               
@@ -815,7 +819,7 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
             signdiff <- apply(sign( allCI[c(fittedbeta, betastr), c(1,5)] ), 1, diff )
             temp.diff<- length( which(signdiff != 0) )
             
-            signdiff <- temp.diff
+            difflen <- temp.diff
             
           }else{
             break
@@ -834,7 +838,7 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
             varname <-  varname[-max.id]
             betastr <- betastr[-max.id]
             max.r2.prev <- r2[max.id]
-            finaldiff <- signdiff[max.id]
+            finaldiff <- difflen[max.id]
           }
           else{
             print("Add any variable won't lead a better model!")
@@ -847,16 +851,18 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
         
         min.dic.prev <- Inf
         fittedvar <- c()
+        fittedbeta <- c()
         cat("initial DIC", min.dic.prev, "\n")
         
         steptrack <- 1
         hiera_stop = 0
         while( steptrack <= maxstep  ){
           dic <- c()
-          
+          difflen <- c()
           
           while( length(noninterID) > 0 ){
             dic <- c()
+            difflen <- c()
             noninterID <- which( !grepl(".", varname, fixed = T)  )
             
             for( i in 1:length(noninterID)  ){
@@ -883,7 +889,16 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               rownames(dic)[i] <- temp.name
               
               ##
-              jag.sum <- summary( jags.res )
+              allCI <- jag.sum[[2]]
+              print(c(fittedbeta, betastr[currentID]))
+              
+              if( length(c(fittedbeta, betastr[currentID])) > 1 )
+                signdiff <- apply( sign( allCI[ c(fittedbeta, betastr[currentID]), c(1,5)] ), 1, diff )
+              else
+                signdiff <- diff(sign( allCI[ c(fittedbeta, betastr[currentID]), c(1,5)] ))
+              
+              temp.diff<- length( which(signdiff != 0) )
+              difflen <- rbind(difflen, temp.diff)
               
             }
             
@@ -897,10 +912,12 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
             
             if( dic[min.id] < min.dic.prev ){
               fittedvar <-c(fittedvar, varname[noninterID[min.id]])
+              fittedbeta <- paste0("b.", fittedvar)
               varname <-  varname[ -noninterID[min.id] ]
               betastr <- betastr[ -noninterID[min.id] ]
               min.dic.prev <- dic[min.id]
               noninterID <- noninterID[-min.id]
+              finaldiff <- difflen[min.id]
             }
             else{
               hiera_stop = 1
@@ -931,6 +948,13 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
               
               dic <- rbind(dic, temp.dic)
               rownames(dic)[i] <- temp.name
+              
+              ### sign
+              allCI <- jag.sum[[2]]
+              signdiff <- apply(sign( allCI[c(fittedbeta, betastr[i]), c(1,5)] ), 1, diff )
+              temp.diff<- length( which(signdiff != 0) )
+              difflen <- rbind(difflen, temp.diff)
+              
             }
           }else if( length(varname) == 1 ){
             print("Only one more variable could be fitted")
@@ -947,6 +971,13 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
             
             dic <- rbind(dic, temp.dic)
             rownames(dic) <- varname
+            
+            ### sign
+            allCI <- jag.sum[[2]]
+            signdiff <- apply(sign( allCI[c(fittedbeta, betastr), c(1,5)] ), 1, diff )
+            temp.diff<- length( which(signdiff != 0) )
+            difflen <- temp.diff
+            
           }else{
             break
           }
@@ -960,10 +991,11 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
           if( dic[min.id] < min.dic.prev ){
             
             fittedvar <-c(fittedvar, varname[min.id])
-            
+            fittedbeta <- paste0("b.", fittedvar)
             varname <-  varname[-min.id]
             betastr <- betastr[-min.id]
             min.dic.prev <- dic[min.id]
+            finaldiff <- difflen[min.id]
           }
           else{
             print("Add any variable won't lead a better model!")
@@ -972,7 +1004,6 @@ step0 <- function (obj, direction = "backward",  maxstep = 1000, criterion = "R2
         }
       }
       
-      print(allCI[1:5,c(1,5)])
       return( list( varname = fittedvar, finaldiff = finaldiff ) )
     }
 }
